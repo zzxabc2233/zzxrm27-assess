@@ -92,6 +92,13 @@ Eigen::Quaterniond Gimbal::q(std::chrono::steady_clock::time_point t)
   }
 }
 
+Eigen::Quaterniond Gimbal::latest_q()
+{
+  std::tuple<Eigen::Quaterniond, std::chrono::steady_clock::time_point> data;
+  queue_.back(data);
+  return std::get<0>(data).normalized();
+}
+
 void Gimbal::send(io::VisionToGimbal VisionToGimbal)
 {
   auto gs = state();//新增

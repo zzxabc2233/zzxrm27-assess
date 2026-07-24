@@ -74,6 +74,7 @@ public:
   GimbalState state() const;
   std::string str(GimbalMode mode) const;
   Eigen::Quaterniond q(std::chrono::steady_clock::time_point t);
+  Eigen::Quaterniond latest_q();  // 无插值，直接取最新四元数，用于拍照标定
 
   void send(
     bool control, bool fire, float yaw, float yaw_vel, float yaw_acc, float pitch, float pitch_vel,

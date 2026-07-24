@@ -1,15 +1,37 @@
-.vscode/
-.github/
+# ===== 构建产物 =====
 build/
-Camera/
+
+# ===== 日志 =====
 logs/
+
+# ===== 标定拍照 =====
 assets/img_with_q/
-records/
-records_auto_buff_big/
-records_new/
-imgs/
-MvSdkLog/
-testvideos/
-watchdog.sh
-records_24/
-records_25/
+calibration/*.jpg
+calibration/*.txt
+
+# ===== 录制数据 =====
+assets/recorded/
+*.MP4
+*.mkv
+
+# ===== IDE =====
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ===== 系统文件 =====
+.DS_Store
+Thumbs.db
+
+# ===== Galaxy SDK 缓存 =====
+*.cache
+
+# ===== Core dump =====
+core
+core.*
+
+# ===== 临时文件 =====
+*.tmp
+/tmp/

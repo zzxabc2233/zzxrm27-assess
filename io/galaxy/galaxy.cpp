@@ -1,8 +1,9 @@
 #include "galaxy.hpp"
 #include "opencv2/opencv.hpp"
+#include <chrono>
 #include <iostream>
 #include <stdexcept>
-// #include <thread>
+#include <thread>
 
 namespace io {
 
@@ -59,19 +60,47 @@ void Galaxy::initializeLibrary() {
 
 void Galaxy::openDevice(const std::string &vid_pid) {
   uint32_t device_num = 0;
+  GX_STATUS status;
 
-  // 枚举设备
-  GX_STATUS status = GXUpdateDeviceList(&device_num, 1000);
-  if (status != GX_STATUS_SUCCESS) {
-    throw std::runtime_error("Failed to enumerate Galaxy devices, status: " +
-                             std::to_string(status));
+  // 枚举设备（带重试，应对 USB 总线竞争 / 库状态残留）
+  const int max_retries = 3;
+  bool found = false;
+
+  for (int attempt = 0; attempt < max_retries; ++attempt) {
+    if (attempt > 0) {
+      std::cout << "Retrying device enumeration (attempt " << attempt + 1
+                << "/" << max_retries << ")..." << std::endl;
+      std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    }
+
+    status = GXUpdateDeviceList(&device_num, 1000);
+    if (status == GX_STATUS_SUCCESS && device_num > 0) {
+      found = true;
+      break;
+    }
+
+    // 最后一次重试前，尝试重置库状态（应对上次崩溃残留）
+    if (attempt == max_retries - 2 && device_num == 0) {
+      std::cout << "Attempting library reset (GXCloseLib + GXInitLib)..." << std::endl;
+      GXCloseLib();
+      std::this_thread::sleep_for(std::chrono::milliseconds(200));
+      status = GXInitLib();
+      if (status != GX_STATUS_SUCCESS) {
+        std::cerr << "Library reset failed, status: " << status << std::endl;
+      }
+    }
+  }
+
+  if (!found) {
+    if (status != GX_STATUS_SUCCESS) {
+      throw std::runtime_error("Failed to enumerate Galaxy devices, status: " +
+                               std::to_string(status));
+    }
+    throw std::runtime_error("No Galaxy camera found after " +
+                             std::to_string(max_retries) + " attempts");
   }
 
   std::cout << "Found " << device_num << " Galaxy device(s)" << std::endl;
-
-  if (device_num == 0) {
-    throw std::runtime_error("No Galaxy camera found");
-  }
 
   // 如果指定了vid_pid且不为空，尝试根据序列号打开特定设备
   if (!vid_pid.empty()) {

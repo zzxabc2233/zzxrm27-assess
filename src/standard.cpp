@@ -18,6 +18,7 @@
 #include "tools/math_tools.hpp"
 #include "tools/plotter.hpp"
 #include "tools/recorder.hpp"
+#include "tools/yaml.hpp"
 
 using namespace std::chrono;
 
@@ -54,6 +55,16 @@ int main(int argc, char * argv[])
   auto mode = io::Mode::idle;
   auto last_mode = io::Mode::idle;
 
+  // 测试模式：config 里设置 test_yaw / test_pitch 可强制发送角度指令
+  auto yaml = tools::load(config_path);
+  double test_yaw = 0, test_pitch = 0;
+  if (yaml["test_yaw"]) test_yaw = yaml["test_yaw"].as<double>();
+  if (yaml["test_pitch"]) test_pitch = yaml["test_pitch"].as<double>();
+  bool test_mode = (test_yaw != 0 || test_pitch != 0);
+  if (test_mode) {
+    tools::logger()->warn("[TEST] Force control mode ON: yaw={:.3f}rad, pitch={:.3f}rad", test_yaw, test_pitch);
+  }
+
   while (!exiter.exit()) {
     camera.read(img, t);
     q = cboard.imu_at(t - 1ms);
@@ -75,6 +86,17 @@ int main(int argc, char * argv[])
     auto targets = tracker.track(armors, t);
 
     auto command = aimer.aim(targets, t, cboard.bullet_speed);
+
+    // 单发开火决策（rising edge 触发，一次瞄准只打一颗弹丸）
+    command.shoot = shooter.shoot(command, aimer, targets, ypr);
+
+    // 测试模式：强制覆盖控制指令
+    if (test_mode) {
+      command.control = true;
+      command.shoot = false;
+      command.yaw = test_yaw;
+      command.pitch = test_pitch;
+    }
 
     cboard.send(command);
   }

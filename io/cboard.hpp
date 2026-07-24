@@ -9,7 +9,8 @@
 #include <vector>
 
 #include "io/command.hpp"
-#include "io/socketcan.hpp"
+#include "io/gimbal/gimbal.hpp"
+#include "serial/serial.h"
 #include "tools/logger.hpp"
 #include "tools/thread_safe_queue.hpp"
 
@@ -40,13 +41,15 @@ public:
   double bullet_speed;
   Mode mode;
   ShootMode shoot_mode;
-  double ft_angle;  //无人机专有
+  double ft_angle;  // 无人机专有
 
   CBoard(const std::string & config_path);
 
+  ~CBoard();
+
   Eigen::Quaterniond imu_at(std::chrono::steady_clock::time_point timestamp);
 
-  void send(Command command) const;
+  void send(Command command);
 
 private:
   struct IMUData
@@ -55,17 +58,29 @@ private:
     std::chrono::steady_clock::time_point timestamp;
   };
 
-  tools::ThreadSafeQueue<IMUData> queue_;  // 必须在can_之前初始化，否则存在死锁的可能
-  SocketCAN can_;
+  tools::ThreadSafeQueue<IMUData> queue_{5000};
+  serial::Serial serial_;
+
   IMUData data_ahead_;
   IMUData data_behind_;
+  bool has_serial_;
 
-  int quaternion_canid_, bullet_speed_canid_, send_canid_;
-  bool has_can_;
+  std::string com_port_;
+  int baud_rate_;
 
-  void callback(const can_frame & frame);
+  // 使用与 gimbal.hpp 相同的协议结构体
+  GimbalToVision rx_data_;
+  VisionToGimbal tx_data_;
 
-  std::string read_yaml(const std::string & config_path);
+  std::thread read_thread_;
+  std::atomic<bool> quit_{false};
+
+  mutable std::mutex serial_mutex_;
+  mutable std::mutex tx_mutex_;
+
+  void read_loop();
+  bool read_bytes(uint8_t * buffer, size_t size);
+  void reconnect();
 };
 
 }  // namespace io

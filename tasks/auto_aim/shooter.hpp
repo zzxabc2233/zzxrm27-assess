@@ -23,6 +23,7 @@ private:
   double first_tolerance_;
   double second_tolerance_;
   bool auto_fire_;
+  bool last_on_target_;  // 单发模式：上一帧是否已瞄准
 };
 }  // namespace auto_aim
 

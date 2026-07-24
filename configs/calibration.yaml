@@ -1,16 +1,25 @@
 pattern_cols: 10
 pattern_rows: 7
-center_distance_mm: 40
+center_distance_mm: 15.9   # 16寸笔记本屏幕: 宽341mm, 2560x1600, 圆点间距119px
 
-R_gimbal2imubody: [1, 0, 0, 0, 1, 0,  0, 0, 1]
+R_gimbal2imubody: [1, 0, 0, 0, 1, 0, 0, 0, 1]
 
-camera_name: "hikrobot"
-exposure_ms: 3
-gain: 10.0
-vid_pid: "2bdf:0001"
+camera_name: "galaxy"
+exposure_ms: 2
+gain: 16.0
+vid_pid: ""
+
+# 重投影误差: 0.0487px
+camera_matrix: [1304.7829452638277, 0, 660.98108976277024, 0, 1300.2921679520232, 515.76461557212167, 0, 0, 1]
+distort_coeffs: [-0.20882888234583208, 0.14808205535270025, 5.3474767088252208e-05, 0.0019472725012797704, 0]
+
+# 相机偏角: yaw-0.86 pitch6.58 roll-4.92 degree
+R_camera2gimbal: [0.0050970863571591085, 0.11539342213021303, 0.99330678938570949, -0.99635681567441381, -0.083976353524905401, 0.014868352558453202, 0.08512999218730144, -0.98976377493710022, 0.11454498789755663]
+t_camera2gimbal: [0.0026532246314774507, 0.0089377961112322244, 0.0868272510885221]
 
 #####-----cboard参数-----#####
-quaternion_canid: 0x01
-bullet_speed_canid: 0x110
-send_canid: 0xff
-can_interface: "can0"
+cboard_com_port: "/dev/cboard"
+cboard_baud_rate: 115200
+
+#####-----gimbal参数-----#####
+com_port: "/dev/serial/by-id/usb-1a86_USB_Serial-if00-port0"  # CH340串口, 永久路径不会变
